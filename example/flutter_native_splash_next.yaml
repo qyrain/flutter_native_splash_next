@@ -1,0 +1,28 @@
+flutter_native_splash_next:
+  color: "#EFF7F4"
+  background_image: "assets/bg_watercolor.png"
+
+  # 顶部 Logo 与产品名称配置
+  logo:
+    image: "assets/app_icon.png"
+    size: 80
+    border_radius: 20
+    top_ratio: 0.28
+    title: "Rainier"
+    title_size: 18
+    title_color: "#2C3432"
+    title_spacing: 14
+    title_bold: true
+
+  # 底部品牌区配置（可直接配 text 文字，也可配 image 图片）
+  branding:
+    text: "Hi, Rainier"
+    text_size: 13
+    text_color: "#343736"
+    bottom_padding: 48
+
+  fullscreen: true
+  android: true
+  ios: true
+  ohos: true
+  web: true

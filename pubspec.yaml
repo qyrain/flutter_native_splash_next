@@ -1,0 +1,33 @@
+name: flutter_native_splash_next
+description: Zero-flicker, full-screen native splash screen generator for Android (12-15+ centerCrop bleed), iOS, HarmonyOS NEXT (OpenHarmony), and Web.
+version: 1.0.0
+homepage: https://github.com/qyrain/flutter_native_splash_next
+repository: https://github.com/qyrain/flutter_native_splash_next
+issue_tracker: https://github.com/qyrain/flutter_native_splash_next/issues
+
+environment:
+  sdk: '>=2.19.0 <4.0.0'
+
+dependencies:
+  args: '>=2.4.0 <3.0.0'
+  image: '>=4.0.15 <5.0.0'
+  json5: '>=0.8.0 <1.0.0'
+  meta: '>=1.8.0 <2.0.0'
+  path: '>=1.8.0 <2.0.0'
+  xml: '>=6.2.0 <8.0.0'
+  yaml: '>=3.1.0 <4.0.0'
+
+dev_dependencies:
+  lints: '>=2.0.0 <7.0.0'
+  test: '>=1.21.0 <2.0.0'
+
+executables:
+  create: create
+  remove: remove
+
+topics:
+  - splash
+  - splashscreen
+  - android
+  - ios
+  - harmonyos

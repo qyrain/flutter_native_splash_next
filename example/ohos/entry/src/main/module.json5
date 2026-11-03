@@ -1,0 +1,15 @@
+{
+  "module": {
+    "name": "entry",
+    "type": "entry",
+    "abilities": [
+      {
+        "name": "EntryAbility",
+        "srcEntry": "./ets/entryability/EntryAbility.ets",
+        "startWindowIcon": "$media:icon",
+        "startWindowBackground": "$color:start_window_background"
+      
+        "startWindow": "$profile:start_window",}
+    ]
+  }
+}
