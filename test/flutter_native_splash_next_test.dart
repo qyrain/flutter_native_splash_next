@@ -416,7 +416,7 @@ flutter_native_splash_next:
       expect(storyboard, contains('image="BrandingImage"'));
       expect(storyboard, contains('constant="48"'));
 
-      // 3. Verify HarmonyOS NEXT light & dark output
+      // 3. Verify HarmonyOS NEXT light & dark output (2688x2688 square bleed + independent splash_brand)
       final ohosSplash =
           File('ohos/entry/src/main/resources/base/media/splash_screen.png');
       final ohosDarkSplash =
@@ -424,11 +424,22 @@ flutter_native_splash_next:
       expect(ohosSplash.existsSync(), isTrue);
       expect(ohosDarkSplash.existsSync(), isTrue);
       final decodedOhos = img.decodeImage(ohosSplash.readAsBytesSync())!;
-      expect(decodedOhos.width, 1242);
+      expect(decodedOhos.width, 2688);
       expect(decodedOhos.height, 2688);
+      expect(
+        File('ohos/entry/src/main/resources/base/media/splash_brand.png')
+            .existsSync(),
+        isTrue,
+      );
+      final ohosStartWindow =
+          File('ohos/entry/src/main/resources/base/profile/start_window.json')
+              .readAsStringSync();
+      expect(ohosStartWindow, contains('startWindowBrandingImage'));
       final indexEts =
           File('ohos/entry/src/main/ets/pages/Index.ets').readAsStringSync();
       expect(indexEts, contains('.syncLoad(true)'));
+      expect(indexEts, contains('splash_brand'));
+      expect(indexEts, contains('.margin({ bottom: 48 })'));
 
       // 4. Verify Web multi-layer responsive output (light + dark)
       expect(File('web/splash/img/light.png').existsSync(), isTrue);
@@ -491,6 +502,11 @@ flutter_native_splash_next:
       );
       expect(
         File('ohos/entry/src/main/resources/base/media/splash_screen.png')
+            .existsSync(),
+        isFalse,
+      );
+      expect(
+        File('ohos/entry/src/main/resources/base/media/splash_brand.png')
             .existsSync(),
         isFalse,
       );
@@ -584,6 +600,14 @@ flutter_native_splash_next:
             .existsSync(),
         isTrue,
       );
+      expect(
+        File('ohos/entry/src/main/resources/base/media/splash_brand.png')
+            .existsSync(),
+        isFalse,
+      );
+      final ohosNoBrandEts =
+          File('ohos/entry/src/main/ets/pages/Index.ets').readAsStringSync();
+      expect(ohosNoBrandEts, isNot(contains('splash_brand')));
 
       expect(File('web/splash/img/logo.png').existsSync(), isTrue);
       expect(File('web/splash/img/branding.png').existsSync(), isFalse);

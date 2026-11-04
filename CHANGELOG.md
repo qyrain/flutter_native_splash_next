@@ -8,6 +8,7 @@
   * Automatically cleans `values-v31` and `values-v33` `windowSplashScreenAnimatedIcon` overrides in full-screen mode so Android 12–15 renders the full-screen `windowBackground` at 0ms.
 * **HarmonyOS NEXT (OpenHarmony API 12+)**:
   * Implements the Two-Stage Zero-Flicker Handover (`start_window.json` with `Cover` fit + `Index.ets` `splashBuilder` with `.syncLoad(true)` and `.expandSafeArea`).
+  * Full foldable screen and tablet support: uses `2688x2688` square bleed canvas for `splash_screen.png` and separates bottom branding into an independent `$media:splash_brand` layer anchored at `bottom: 48vp` in `Index.ets`, preventing bottom text truncation and logo distortion when unfolded.
 * **iOS**:
   * Automatically configures `LaunchScreen.storyboard` with `scaleAspectFill` and 4-edge superview constraints plus `@1x / @2x / @3x` `LaunchImage.imageset` assets.
 * **Web**:

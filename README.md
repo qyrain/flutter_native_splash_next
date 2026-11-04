@@ -31,7 +31,7 @@
 | :--- | :--- |
 | **1. 声明式组件化配置（免切全屏大图）** | 只需传入一张普通 App 桌面图标（`app_icon.png`）与可选背景图，即可在 YAML 中自由配置 **Logo 宽高、圆角半径、黄金分割比例、产品名称文字（支持中英文/字号/颜色/粗细/间距）**；底部区域既可配置 **文字**，也可配置 **透明图片（支持指定高度等比缩放）**，或者直接省略底部区域。 |
 | **2. Android 全屏正方形出血等比居中引擎** | 自动按 Android `360dp` 安全区缩放，并向四周平滑延展边缘像素生成 `2688×2688` 正方形出血画布（`drawable-xxhdpi/bg_splash.png`），配合 `android:gravity="center"` 与自动清理 `values-v31` / `values-v33` 中心圆圈图标覆盖，在 Android 5.0 ~ 15+ 上实现 **0ms 全屏 `centerCrop` 等比铺满、绝不拉伸变形**。 |
-| **3. 四端全链路底部独立安全区锚定** | 支持将底部品牌文字或图片分离为独立顶层图层，在不同屏幕长宽比下永远保持固定底边距：<br>• **Android**：`<layer-list>` 顶层 `<item android:bottom="48dp">` 锚定 `@drawable/splash_brand`<br>• **iOS**：`LaunchScreen.storyboard` 独立 `BrandingImage` 视图绑定底部 `48pt` 约束<br>• **Web**：独立 `#splash-branding` 节点固定 `bottom: 48px`<br>• **HarmonyOS NEXT**：自动按 `1242×2688` 黄金比例合成 `48vp` 底部安全边距 |
+| **3. 四端全链路底部独立安全区锚定** | 支持将底部品牌文字或图片分离为独立顶层图层，在不同屏幕长宽比下永远保持固定底边距：<br>• **Android**：`<layer-list>` 顶层 `<item android:bottom="48dp">` 锚定 `@drawable/splash_brand`<br>• **iOS**：`LaunchScreen.storyboard` 独立 `BrandingImage` 视图绑定底部 `48pt` 约束<br>• **Web**：独立 `#splash-branding` 节点固定 `bottom: 48px`<br>• **HarmonyOS NEXT**：`Index.ets` 独立 `splash_brand` 视图绑定物理底边 `.margin({ bottom: 48 })`，配合 `2688×2688` 正方形出血图，在直板机与**折叠屏展开态**下底部文字永不被裁切、永不变形 |
 | **4. RGB 预合成防重影与无损出血图像处理** | 在图像缩放与出血延展前，自动将半透明 Alpha 像素与基础背景色预合成为纯净的 3 通道 `RGB` 图像，彻底消除半透明 PNG 缩放后常见的边缘残影与白边，确保文字与 Logo 边缘 100% 锐利干净。 |
 | **5. 鸿蒙 NEXT 双阶段零白屏无缝接力** | 原生支持 OpenHarmony API 12+ 双阶段启动接力：<br>① **第一阶段（系统 0ms 窗口）**：自动生成 `start_window.json`（`Cover` 全屏背景图）并挂载至 `module.json5`；<br>② **第二阶段（ArkUI 承接）**：自动为 `Index.ets` 注入带 `.objectFit(ImageFit.Cover).syncLoad(true).expandSafeArea(...)` 的 `splashBuilder`，彻底消除异步解码带来的 1~2 帧白屏闪烁。 |
 
@@ -224,10 +224,12 @@ void main() async {
 - `Base.lproj/LaunchScreen.storyboard`：底层 `LaunchImage` 采用 `scaleAspectFill` 四边贴合父容器；顶层 `BrandingImage` 采用独立 `UIImageView`（`scaleAspectFit`）绑定距离底部 `48pt` 约束，确保在 `16:9` 的 iPhone SE、`19.5:9` 的 iPhone 16 Pro Max 及 iPad 上底部文字永远不会被裁切。
 
 ### 3. HarmonyOS NEXT (`ohos/entry/src/main/`)
-- `resources/base/media/splash_screen.png`（及 `resources/dark/media/splash_screen.png`）：`1242 × 2688` 高清合成启动图。
-- `resources/base/profile/start_window.json`：配置系统级 0ms 第一阶段窗口 `"startWindowBackgroundImage": "$media:splash_screen"` 与 `"startWindowBackgroundImageFit": "Cover"`。
+- `resources/base/media/splash_screen.png`（及 `resources/dark/media/splash_screen.png`）：
+  生成 **`2688 × 2688 px` 正方形等比出血背景**（含顶部居中 Logo 与产品名），在手机竖屏（裁左右出血）与**折叠屏展开态/平板宽屏**下自适应填满，Logo 大小与位置保持物理 1:1，绝不拉伸变形或异常放大。
+- `resources/base/media/splash_brand.png`：独立底部透明品牌文字/图片层。
+- `resources/base/profile/start_window.json`：配置系统级 0ms 第一阶段窗口 `"startWindowBackgroundImage": "$media:splash_screen"`（`Cover`）与可选 `"startWindowBrandingImage": "$media:splash_brand"`。
 - `module.json5` & `resources/base/element/color.json`：自动挂载 `"startWindow": "$profile:start_window"` 并同步 `start_window_background` 底色。
-- `ets/pages/Index.ets`：自动配置第二阶段 ArkUI `splashBuilder()`，包含 `.objectFit(ImageFit.Cover)`、**`.syncLoad(true)`（消除异步解码导致的 1~2 帧白屏闪烁）** 与 `.expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])`。
+- `ets/pages/Index.ets`：自动配置第二阶段 ArkUI 双层 `splashBuilder()`（底层 `splash_screen` Cover 铺满 + 顶层 `splash_brand` 绑定物理底边 `.margin({ bottom: 48 })`），包含 **`.syncLoad(true)`（消除异步解码导致的 1~2 帧白屏闪烁）** 与 `.expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])`。
 
 ### 4. Web (`web/`)
 - `web/splash/img/`：生成 `light.png`（背景层）、`logo.png`（顶部 Logo + 产品名称层）、`branding.png`（底部品牌层）及对应深色模式图片。
