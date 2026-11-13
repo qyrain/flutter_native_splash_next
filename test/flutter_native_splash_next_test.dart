@@ -489,7 +489,7 @@ flutter_native_splash_next:
       expect(brandSplashFile.existsSync(), isTrue);
       expect(
         File('ios/Runner/Info.plist').readAsStringSync(),
-        contains('<key>UIStatusBarHidden</key>\n\t<true/>'),
+        contains('<key>UIStatusBarHidden</key>\n\t<false/>'),
       );
 
       await removeSplash();

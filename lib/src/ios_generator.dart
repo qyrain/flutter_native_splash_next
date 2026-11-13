@@ -66,10 +66,33 @@ class IosSplashGenerator {
     final gNorm = (rgb[1] / 255.0).toStringAsFixed(6);
     final bNorm = (rgb[2] / 255.0).toStringAsFixed(6);
 
+    const bgColorsetDir = 'ios/Runner/Assets.xcassets/LaunchBackground.colorset';
+    final hasDarkColor = config.darkColor != null;
+    if (hasDarkColor) {
+      final darkRgb = SplashConfig.parseRgb(config.darkColor!);
+      final darkRNorm = (darkRgb[0] / 255.0).toStringAsFixed(6);
+      final darkGNorm = (darkRgb[1] / 255.0).toStringAsFixed(6);
+      final darkBNorm = (darkRgb[2] / 255.0).toStringAsFixed(6);
+      Directory(bgColorsetDir).createSync(recursive: true);
+      File('$bgColorsetDir/Contents.json').writeAsStringSync(
+        _launchBackgroundColorsetJson(
+          lightR: rNorm,
+          lightG: gNorm,
+          lightB: bNorm,
+          darkR: darkRNorm,
+          darkG: darkGNorm,
+          darkB: darkBNorm,
+        ),
+      );
+    } else if (Directory(bgColorsetDir).existsSync()) {
+      Directory(bgColorsetDir).deleteSync(recursive: true);
+    }
+
     final storyboard = _buildStoryboardXml(
       rNorm: rNorm,
       gNorm: gNorm,
       bNorm: bNorm,
+      hasNamedBackground: hasDarkColor,
       hasLaunchImage: lightAssets != null,
       hasBranding: hasBrandLayer,
       brandPtW: brandPtW,
@@ -80,18 +103,23 @@ class IosSplashGenerator {
     storyboardFile.parent.createSync(recursive: true);
     storyboardFile.writeAsStringSync(storyboard);
 
-    _updateInfoPlist(fullscreen: config.fullscreen);
+    // 不再将 fullscreen 等同于隐藏状态栏，确保进入 App 后状态栏正常显示
+    _updateInfoPlist(hideStatusBar: false);
+    _updateSwiftDelegates(
+      lightRgb: rgb,
+      darkRgb: hasDarkColor ? SplashConfig.parseRgb(config.darkColor!) : null,
+    );
 
     print('[iOS] Splash screen configured successfully.');
   }
 
   /// Synchronizes `UIStatusBarHidden` and `UILaunchStoryboardName` in `ios/Runner/Info.plist`.
-  static void _updateInfoPlist({required bool fullscreen}) {
+  static void _updateInfoPlist({required bool hideStatusBar}) {
     final plistFile = File('ios/Runner/Info.plist');
     if (!plistFile.existsSync()) return;
 
     var content = plistFile.readAsStringSync();
-    final statusTag = fullscreen ? '<true/>' : '<false/>';
+    final statusTag = hideStatusBar ? '<true/>' : '<false/>';
 
     if (content.contains('<key>UIStatusBarHidden</key>')) {
       content = content.replaceFirstMapped(
@@ -168,6 +196,7 @@ class IosSplashGenerator {
     required String rNorm,
     required String gNorm,
     required String bNorm,
+    required bool hasNamedBackground,
     required bool hasLaunchImage,
     required bool hasBranding,
     required int brandPtW,
@@ -208,12 +237,19 @@ class IosSplashGenerator {
     final brandingResource = hasBranding
         ? '\n        <image name="BrandingImage" width="$brandPtW" height="$brandPtH"/>'
         : '';
+    final backgroundResource = hasNamedBackground
+        ? '\n        <namedColor name="LaunchBackground">\n            <color red="$rNorm" green="$gNorm" blue="$bNorm" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>\n        </namedColor>'
+        : '';
+    final backgroundColorTag = hasNamedBackground
+        ? '<color key="backgroundColor" name="LaunchBackground"/>'
+        : '<color key="backgroundColor" red="$rNorm" green="$gNorm" blue="$bNorm" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>';
 
     return '''<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="21507" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" colorMatched="YES" initialViewController="01J-lp-oVM">
     <dependencies>
         <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="21505"/>
+        <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
@@ -230,7 +266,7 @@ class IosSplashGenerator {
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>$launchImageSubview$brandingSubview
                         </subviews>
-                        <color key="backgroundColor" red="$rNorm" green="$gNorm" blue="$bNorm" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        $backgroundColorTag
                         <constraints>$launchImageConstraints$brandingConstraints
                         </constraints>
                     </view>
@@ -240,7 +276,7 @@ class IosSplashGenerator {
             <point key="canvasLocation" x="53" y="375"/>
         </scene>
     </scenes>
-    <resources>$launchResource$brandingResource
+    <resources>$launchResource$brandingResource$backgroundResource
     </resources>
 </document>
 ''';
@@ -328,4 +364,164 @@ class IosSplashGenerator {
   }
 }
 ''';
+
+  static String _launchBackgroundColorsetJson({
+    required String lightR,
+    required String lightG,
+    required String lightB,
+    required String darkR,
+    required String darkG,
+    required String darkB,
+  }) => '''{
+  "colors" : [
+    {
+      "color" : {
+        "color-space" : "srgb",
+        "components" : {
+          "alpha" : "1.000",
+          "blue" : "$lightB",
+          "green" : "$lightG",
+          "red" : "$lightR"
+        }
+      },
+      "idiom" : "universal"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "color" : {
+        "color-space" : "srgb",
+        "components" : {
+          "alpha" : "1.000",
+          "blue" : "$darkB",
+          "green" : "$darkG",
+          "red" : "$darkR"
+        }
+      },
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "version" : 1,
+    "author" : "xcode"
+  }
+}
+''';
+
+  static const String _swiftMarkerStart = '// [flutter_native_splash_next:start]';
+  static const String _swiftMarkerEnd = '// [flutter_native_splash_next:end]';
+
+  static void _updateSwiftDelegates({
+    required List<int> lightRgb,
+    required List<int>? darkRgb,
+  }) {
+    String colorExpr(List<int> c) =>
+        'UIColor(red: ${(c[0] / 255.0).toStringAsFixed(4)}, '
+        'green: ${(c[1] / 255.0).toStringAsFixed(4)}, '
+        'blue: ${(c[2] / 255.0).toStringAsFixed(4)}, alpha: 1.0)';
+
+    final lightExpr = colorExpr(lightRgb);
+    final bgSnippet = darkRgb != null
+        ? '''    $_swiftMarkerStart
+    if #available(iOS 13.0, *) {
+      let splashBg = UIColor { trait in
+        trait.userInterfaceStyle == .dark ? ${colorExpr(darkRgb)} : $lightExpr
+      }
+      window?.backgroundColor = splashBg
+      window?.rootViewController?.view.backgroundColor = splashBg
+    } else {
+      window?.backgroundColor = $lightExpr
+      window?.rootViewController?.view.backgroundColor = $lightExpr
+    }
+    $_swiftMarkerEnd'''
+        : '''    $_swiftMarkerStart
+    window?.backgroundColor = $lightExpr
+    window?.rootViewController?.view.backgroundColor = $lightExpr
+    $_swiftMarkerEnd''';
+
+    final sceneFile = File('ios/Runner/SceneDelegate.swift');
+    if (sceneFile.existsSync()) {
+      _injectIntoSceneDelegate(sceneFile, bgSnippet);
+      return;
+    }
+
+    final appDelegateFile = File('ios/Runner/AppDelegate.swift');
+    if (appDelegateFile.existsSync()) {
+      _injectIntoAppDelegate(appDelegateFile, bgSnippet);
+    }
+  }
+
+  static void _injectIntoSceneDelegate(File file, String snippet) {
+    var content = file.readAsStringSync();
+    if (_replaceExistingMarkerBlock(file, content, snippet)) return;
+
+    if (content.contains('super.scene(')) {
+      content = content.replaceFirstMapped(
+        RegExp(r'(super\.scene\([^\n]+\)\s*\n)'),
+        (m) => '${m.group(1)}$snippet\n',
+      );
+      file.writeAsStringSync(content);
+      return;
+    }
+
+    final classMatch = RegExp(
+      r'class\s+SceneDelegate\s*:\s*FlutterSceneDelegate\s*\{',
+    ).firstMatch(content);
+    if (classMatch != null) {
+      final methodBlock = '''
+  override func scene(
+    _ scene: UIScene,
+    willConnectTo session: UISceneSession,
+    options connectionOptions: UIScene.ConnectionOptions
+  ) {
+    super.scene(scene, willConnectTo: session, options: connectionOptions)
+$snippet
+  }
+''';
+      content = content.replaceRange(
+        classMatch.end,
+        classMatch.end,
+        '\n$methodBlock',
+      );
+      file.writeAsStringSync(content);
+    }
+  }
+
+  static void _injectIntoAppDelegate(File file, String snippet) {
+    var content = file.readAsStringSync();
+    if (_replaceExistingMarkerBlock(file, content, snippet)) return;
+
+    final returnRegex = RegExp(
+      r'return\s+super\.application\(\s*application,\s*didFinishLaunchingWithOptions:\s*launchOptions\s*\)',
+    );
+    if (returnRegex.hasMatch(content)) {
+      content = content.replaceFirstMapped(
+        returnRegex,
+        (m) =>
+            'let result = ${m.group(0)}\n$snippet\n    return result',
+      );
+      file.writeAsStringSync(content);
+    }
+  }
+
+  static bool _replaceExistingMarkerBlock(
+    File file,
+    String content,
+    String snippet,
+  ) {
+    final startIdx = content.indexOf(_swiftMarkerStart);
+    final endIdx = content.indexOf(_swiftMarkerEnd);
+    if (startIdx == -1 || endIdx == -1 || endIdx < startIdx) return false;
+
+    final lineStart = content.lastIndexOf('\n', startIdx);
+    final replaceFrom = lineStart == -1 ? 0 : lineStart + 1;
+    final replaceTo = endIdx + _swiftMarkerEnd.length;
+    final updated = content.replaceRange(replaceFrom, replaceTo, snippet);
+    file.writeAsStringSync(updated);
+    return true;
+  }
 }

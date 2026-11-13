@@ -1,6 +1,6 @@
 /// Zero-flicker, full-screen native splash screen generator for
 /// Android (12-15+ centerCrop bleed), iOS, HarmonyOS NEXT (OpenHarmony), and Web.
-library flutter_native_splash_next;
+library;
 
 export 'cli_commands.dart';
 export 'src/config.dart';

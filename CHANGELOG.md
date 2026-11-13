@@ -1,3 +1,10 @@
+## 1.0.1
+
+* **iOS**:
+  * Generates `LaunchBackground.colorset` (`light` + `dark`) and binds `LaunchScreen.storyboard` root background to the named color when `color_dark` is configured.
+  * Automatically injects dynamic light/dark window background color into `SceneDelegate.swift` (or `AppDelegate.swift`) to prevent white-flash transition between LaunchScreen dismissal and the first Flutter frame.
+  * Stops forcing `UIStatusBarHidden` to `true` when `fullscreen: true`, keeping the system status bar visible inside the app.
+
 ## 1.0.0
 
 * Initial release of `flutter_native_splash_next`.
